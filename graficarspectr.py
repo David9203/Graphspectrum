@@ -227,49 +227,60 @@ plt.show()
 
 
 ##---graficar kmeans ---
-
-with open('dataspectrumallre.txt') as json_file:
-                totaldict = json.load(json_file)  
-listhour=[]
-dictionarymeanspectall={}
-for i in totaldict:
+def graphkmeans(cluster):
+    with open('dataspectrumallre.txt') as json_file:
+                    totaldict = json.load(json_file)  
     
-    listhour.append(i['hour'])
-
-listhour=np.array(listhour)
-uniquehours=np.unique(listhour)
-
-
-
-
-
-from sklearn.preprocessing import MinMaxScaler
-for z in range(0,6):    
-    arraymeanspect = np.zeros(shape=(238,129))
+    
+    newdict={}
+    for ind,i in enumerate(totaldict):
+        if i['Kmeans']==cluster:
+            
+            newdict[ind]=i
+            
+    totaldict=newdict
+    listhour=[]
+    dictionarymeanspectall={}
+    for i in totaldict:
+        
+        listhour.append(totaldict[i]['hour'])
+    
+    listhour=np.array(listhour)
+    uniquehours=np.unique(listhour)
+    
+    
+    
+    
+    
+    arraymeanspect = np.zeros(shape=(len(uniquehours),129))
+    
     for ind, i in enumerate(uniquehours):
         
         hlist=[]
-        for jnd,j in enumerate(totaldict):      #Recorre todos los espectros de grabaciones
-            #print(jnd)
-            if i==j['hour'] and j['Kmeans']==str(z) :
-                print('aaaa')
-                hlist.append(np.power(10, j['meanspectrum'])/10)
+        for j in totaldict:      #Recorre todos los espectros de grabaciones
+            if i==totaldict[j]['hour']:
+                hlist.append(np.power(10, np.array(totaldict[j]['meanspectrum'])/10))
         
         dictmeanspect = {
-                       str(i): 10*np.log(np.mean(hlist, axis=0))}
+                       str(i): 10*np.log(np.mean(hlist, axis=0)),
+                    }
         dictionarymeanspectall.update(dictmeanspect)
         
+        from sklearn.preprocessing import MinMaxScaler
         
-        
-        withoutstandari=10*np.log(np.mean(hlist, axis=0))
+        withoutstandari=10*np.log(np.median(hlist, axis=0))
         scaler = MinMaxScaler()
         ss=scaler.fit_transform(withoutstandari.reshape(-1, 1))
         #scaler.transform(withoutstandari)
         arraymeanspect[ind]= ss.reshape(129)
     
-    f=np.linspace(0, 24, num=129)
-    h=np.linspace(0, 23.5, num=238)
+        
+    #---Graficar dictionary mean spect
     
+    
+    f=np.linspace(0, 24, num=129)
+    h=np.linspace(0, 23.5, num=len(uniquehours))
+        
     plt.pcolormesh(h, f, arraymeanspect.T, cmap="inferno")
     #plt.pcolor(t, f, s)
     plt.ylabel('Frequency [kHz]')
@@ -279,7 +290,5 @@ for z in range(0,6):
     plt.savefig('meanspectday.png', dpi=300)
     
     plt.show()    
-#---Graficar dictionary mean spect
-
-
-
+    
+graphkmeans('4')
